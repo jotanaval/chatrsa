@@ -524,8 +524,8 @@ public static byte[] convertStringToByteArray(String s) {
       CarregadorChavePrivada carrega_priv= new CarregadorChavePrivada();
       CarregadorChavePublica carrega_publ= new CarregadorChavePublica();
         try {
-            chave_privada = carrega_priv.carregaChavePrivada(new File("C:\\chaves\\privada.key"));
-            chave_publica = carrega_publ.carregaChavePublica(new File("C:\\chaves\\publica.key"));
+            chave_privada = carrega_priv.carregaChavePrivada(new File("\\chaves\\privada.key"));
+            chave_publica = carrega_publ.carregaChavePublica(new File("\\chaves\\publica.key"));
         } catch (IOException ex) {
             Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
