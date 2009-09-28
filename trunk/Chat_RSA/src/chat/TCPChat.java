@@ -606,7 +606,7 @@ public static byte[] convertStringToByteArray(String s) {
                     //    Decifrador dcf = new Decifrador();
                    //     byte[] decifrado = dcf.decifra (pvk, cifrado[0], cifrado[1]);
                      //   System.out.println (new String (decifrado, "ISO-8859-1")+"..esse é o texto enviado..");
-                        String texto_enviar=new String (cifrado[0], "ISO-8859-1")+"****"+ new String(cifrado[1], "ISO-8859-1");
+                        String texto_enviar=new String(cifrado[0], "ISO-8859-1")+"*****"+new String(cifrado[1], "ISO-8859-1");
                         System.out.println(texto_enviar);
 
 
@@ -643,10 +643,13 @@ public static byte[] convertStringToByteArray(String s) {
                // Receive data
                 if (in.ready())
                  {  
-                   s = in.readLine();
+                  s = in.readLine();
+                
+                 
+                     System.out.println(s);
 
                    //tentativa de converter a string em um byte seguindo uma determinada codificação
-                   StringTokenizer st = new StringTokenizer(s,"****");
+                  StringTokenizer st = new StringTokenizer(s,"*****");
                    byte[] b1= st.nextToken().getBytes("ISO-8859-1");
                    byte[] b2= st.nextToken().getBytes("ISO-8859-1");
                    CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
