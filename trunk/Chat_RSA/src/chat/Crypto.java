@@ -152,57 +152,15 @@ class Criptografia
 
         //-- Decifrando a mensagem
         CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
-        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("privada.key"));
+        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
         Decifrador dcf = new Decifrador();
         byte[] decifrado = dcf.decifra (pvk, cifrado[0], cifrado[1]);
-        System.out.println (new String (textoClaro, "ISO-8859-1"));
+        System.out.println (new String (decifrado, "ISO-8859-1")+"....");
     }
      
 }
 
-class trabalho
-{
- 
-  public String cript(String digitado) throws UnsupportedEncodingException, IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException
-  {
-   //-- Cifrando a mensagem "Hello, world!"
-        byte[] textoClaro = digitado.getBytes("ISO-8859-1");
-        CarregadorChavePublica ccp = new CarregadorChavePublica();
-        PublicKey pub = ccp.carregaChavePublica (new File ("publica.key"));
-        Cifrador cf = new Cifrador();
-        byte[][] cifrado = cf.cifra (pub, textoClaro);
-        System.out.println(cifrado[0]+"-"+cifrado[1]);
 
-        return new String(cifrado[0]+"-"+cifrado[1]);
-  }
-
-
-
-
-  public static byte[] convertStringToByteArray(String s)
-  {
-      byte[] theByteArray = s.getBytes();
-      return theByteArray;
-    }
-
-
-  public String decript(String decriptografar) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException
-  {
-        StringTokenizer st = new StringTokenizer("-");
-        byte a[] = convertStringToByteArray(st.nextToken());
-        byte b[] = convertStringToByteArray(st.nextToken());
-  //-- Decifrando a mensagem
-        CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
-        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
-        Decifrador dcf = new Decifrador();
-        byte[] decifrado = dcf.decifra (pvk, a, b);
-        System.out.println (new String (decifrado));
-
-
-
-  return new String(decifrado);
-  }
-}
 
 
 
