@@ -272,6 +272,7 @@ public class TCPChat implements Runnable {
                   chatLine.selectAll();
                   // Send the string
                   sendString(s);
+
                }
             }
          });
@@ -460,31 +461,13 @@ public class TCPChat implements Runnable {
 
       // Make sure that the button/text field states are consistent
       // with the internal states
-
-      Cifrador cf = new Cifrador();
-
+     
       ipField.setText(hostIP);
       portField.setText((new Integer(port)).toString());
       hostOption.setSelected(isHost);
       guestOption.setSelected(!isHost);
       statusField.setText(statusString);
-      chatText.append(toAppend.toString()+"\n");
-        try {
-            cifrado = cf.cifra(chave_publica, toAppend.toString().getBytes());
-            chatText2.append("CRIPTOGRAFADO: "+new String(cifrado[0])+"\n");
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchPaddingException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidKeyException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalBlockSizeException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (BadPaddingException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidAlgorithmParameterException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        }
+      chatText.append(toAppend.toString()+"\n");   
       
       toAppend.setLength(0);
 
@@ -521,20 +504,8 @@ public static byte[] convertStringToByteArray(String s) {
       
 
       initGUI();
-      CarregadorChavePrivada carrega_priv= new CarregadorChavePrivada();
-      CarregadorChavePublica carrega_publ= new CarregadorChavePublica();
-        try {
-            chave_privada = carrega_priv.carregaChavePrivada(new File("\\chaves\\privada.key"));
-            chave_publica = carrega_publ.carregaChavePublica(new File("\\chaves\\publica.key"));
-        } catch (IOException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        chave_simetrica= null;
-
-
-      while (true) {
+     
+     while (true) {
          try { // Poll every ~10 ms
             Thread.sleep(10);
          }
@@ -572,15 +543,16 @@ public static byte[] convertStringToByteArray(String s) {
 
                if (toSend.length() != 0)
                {
-                out.print(cifrado[0].toString());  out.flush();
-                toSend.setLength(0);
+                   
+                        out.print(toSend);
+                        out.flush();
+              toSend.setLength(0);
                 changeStatusTS(NULL, true);
                }
                // Receive data
                 if (in.ready())
                  {  
-                   s = in.readLine();
-                  
+                   s = in.readLine();                      
                      
                   if ((s != null) &&  (s.length() != 0))
                   {
@@ -592,7 +564,7 @@ public static byte[] convertStringToByteArray(String s) {
                      // Otherwise, receive what text
                      else
                      {
-                        appendToChatBox("INCOMING: " + s + "\n");
+                        appendToChatBox("RECEBIDO: " + s + "\n");
                         changeStatusTS(NULL, true);
                      }
                   }
