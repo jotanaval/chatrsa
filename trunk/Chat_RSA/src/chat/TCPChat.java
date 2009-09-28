@@ -3,9 +3,11 @@ package chat;
 import java.lang.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.io.*;
 import java.awt.*;
@@ -495,10 +497,37 @@ public static byte[] convertStringToByteArray(String s) {
                 (byte)value};
 }
 
-
+   static void printHex(byte[] b) {
+        if (b == null) {
+            System.out.println ("(null)");
+        } else {
+        for (int i = 0; i < b.length; ++i) {
+            if (i % 16 == 0) {
+                System.out.print (Integer.toHexString ((i & 0xFFFF) | 0x10000).substring(1,5) + " - ");
+            }
+            System.out.print (Integer.toHexString((b[i]&0xFF) | 0x100).substring(1,3) + " ");
+            if (i % 16 == 15 || i == b.length - 1)
+            {
+                int j;
+                for (j = 16 - i % 16; j > 1; --j)
+                    System.out.print ("   ");
+                System.out.print (" - ");
+                int start = (i / 16) * 16;
+                int end = (b.length < i + 1) ? b.length : (i + 1);
+                for (j = start; j < end; ++j)
+                    if (b[j] >= 32 && b[j] <= 126)
+                        System.out.print ((char)b[j]);
+                    else
+                        System.out.print (".");
+                System.out.println ();
+            }
+        }
+        System.out.println();
+        }
+    }
 
    // The main procedure
-   public static void main(String args[]) {
+   public static void main(String args[]) throws ClassNotFoundException {
       String s = null;
       Integer is=0;
       
@@ -543,8 +572,70 @@ public static byte[] convertStringToByteArray(String s) {
 
                if (toSend.length() != 0)
                {
-                   
-                        out.print(toSend);
+
+                   //teste de criptografia
+                    //-- Gera o par de chaves, em dois arquivos (chave.publica e chave.privada)
+        GeradorParChaves gpc = new GeradorParChaves();
+                    try {
+                        gpc.geraParChaves(new File("chave.publica"), new File("chave.privada"));
+                    } catch (NoSuchAlgorithmException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InvalidAlgorithmParameterException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (CertificateException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (KeyStoreException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+        //-- Cifrando a mensagem "Hello, world!"
+        byte[] textoClaro = toSend.toString().getBytes("ISO-8859-1");
+        CarregadorChavePublica ccp = new CarregadorChavePublica();
+        PublicKey pub = ccp.carregaChavePublica (new File ("chave.publica"));
+        Cifrador cf = new Cifrador();
+        byte[][] cifrado;
+                    try {
+                        cifrado = cf.cifra(pub, textoClaro);
+
+                        printHex (cifrado[0]);
+                        printHex (cifrado[1]);
+
+                        //-- Decifrando a mensagem
+                        CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
+                   //     PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
+                    //    Decifrador dcf = new Decifrador();
+                   //     byte[] decifrado = dcf.decifra (pvk, cifrado[0], cifrado[1]);
+                     //   System.out.println (new String (decifrado, "ISO-8859-1")+"..esse é o texto enviado..");
+                        String texto_enviar=new String (cifrado[0], "ISO-8859-1")+"****"+ new String(cifrado[1], "ISO-8859-1");
+                        System.out.println(texto_enviar);
+
+
+                        out.print(texto_enviar);
+                       
+
+
+                    } catch (NoSuchAlgorithmException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (NoSuchPaddingException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InvalidKeyException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalBlockSizeException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (BadPaddingException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InvalidAlgorithmParameterException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+
+
+
+
+
+
+
+                        
                         out.flush();
               toSend.setLength(0);
                 changeStatusTS(NULL, true);
@@ -552,7 +643,34 @@ public static byte[] convertStringToByteArray(String s) {
                // Receive data
                 if (in.ready())
                  {  
-                   s = in.readLine();                      
+                   s = in.readLine();
+
+                   //tentativa de converter a string em um byte seguindo uma determinada codificação
+                   StringTokenizer st = new StringTokenizer(s,"****");
+                   byte[] b1= st.nextToken().getBytes("ISO-8859-1");
+                   byte[] b2= st.nextToken().getBytes("ISO-8859-1");
+                   CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
+                        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
+
+                   Decifrador decifrador = new Decifrador();
+                    try {
+                        byte[] decif = decifrador.decifra (pvk, b1, b2);
+                        System.out.println (new String (decif, "ISO-8859-1")+"..esse é o texto recebido..");
+                    } catch (NoSuchAlgorithmException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (NoSuchPaddingException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InvalidKeyException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalBlockSizeException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (BadPaddingException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InvalidAlgorithmParameterException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+
                      
                   if ((s != null) &&  (s.length() != 0))
                   {
