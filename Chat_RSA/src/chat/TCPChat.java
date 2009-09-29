@@ -73,7 +73,7 @@ public class TCPChat implements Runnable {
    public static PrintWriter out = null;
     private static JTextArea chatText2;
     private static JTextField chatLine2;
-    private static PrivateKey chave_privada;
+  
     private static PublicKey chave_publica;
     private static byte[] chave_simetrica;
     private static BufferedOutputStream bos;
@@ -372,7 +372,7 @@ public class TCPChat implements Runnable {
    private static void sendString(String s) {
       synchronized (toSend) {
          toSend.append(s + "\n");
-          System.out.println("enviando");
+          
       }
    }
 
@@ -409,7 +409,7 @@ public class TCPChat implements Runnable {
          bos = null;
       }
    }
-    private static byte[][] cifrado;
+   
 
    /////////////////////////////////////////////////////////////////
 
@@ -529,7 +529,7 @@ public static byte[] convertStringToByteArray(String s) {
     }
 
    // The main procedure
-   public static void main(String args[]) throws ClassNotFoundException, IOException {
+   public static void main(String args[]) throws ClassNotFoundException, IOException, InterruptedException {
       String s = null;
       Integer is=0;
       
@@ -538,7 +538,7 @@ public static byte[] convertStringToByteArray(String s) {
      
      while (true) {
          try { // Poll every ~10 ms
-            Thread.sleep(10);
+            Thread.sleep(5);
          }
          catch (InterruptedException e) {}
 
@@ -576,18 +576,107 @@ public static byte[] convertStringToByteArray(String s) {
 
                if (toSend.length() != 0)
                {      
-                    byte[] codificar = new byte[32];
-                     byte[] codificar2 = new byte[32];
-                    codificar=        toSend.toString().getBytes("ISO-8859-1")   ;
-                    codificar2=  "chve_teste".getBytes("ISO-8859-1")   ;
-                    System.out.println(codificar.length);
-                    bos.write(codificar, 0, codificar.length);
-
+                    byte[] codificar = new byte[64];
+                     byte[] codificar2 = new byte[64];
+                    codificar=toSend.toString().getBytes("ISO-8859-1")   ;
+                    codificar2=  "chave_grande_pra_testar_tamanho_do_byte".getBytes("ISO-8859-1")   ;
+                   
+                    
                     CarregadorChavePublica ccp = new CarregadorChavePublica();
                     PublicKey pub = ccp.carregaChavePublica (new File ("chave.publica"));
                     Cifrador cf = new Cifrador();
                     try {
                         byte[][] cifrado = cf.cifra(pub, codificar);
+
+                           System.out.println(cifrado[0].length+"tamanho do texto_cifrado");
+                
+                            System.out.println(cifrado[1].length+"tamanho da chave cifrada");
+
+                            byte[] enviar=null;
+                            int j = 0;
+                            int k = 0;
+                            byte [] ciff = new byte[32];
+                            ciff=cifrado[0];
+                            for (int i = 0; i < 128+ciff.length; i++)
+                            {
+                               if(i<128)
+                               {
+                                   enviar[i]=cifrado[1][i];
+                                   j=128;
+                               }
+                               if(i>=128 && i<128+ciff.length)
+                               {
+                                    enviar[j]=ciff[k];
+                                    j++;
+                                    k++;
+                               }
+
+                            }
+                            
+                            
+                             System.out.println(new String(cifrado[1],"ISO-8859-1")+"  saida de chave cifrada");
+                             System.out.println(new String(cifrado[0],"ISO-8859-1")+"  saida de texto cifrado");
+                             System.out.println(enviar.length);
+                            bos.write(enviar,0,enviar.length);
+
+                        } catch (NoSuchAlgorithmException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (NoSuchPaddingException ex) {
+                        Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (InvalidKeyException ex) {
+                            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (IllegalBlockSizeException ex) {
+                            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (BadPaddingException ex) {
+                            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (InvalidAlgorithmParameterException ex) {
+                            Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+         
+                    bos.flush();
+                    toSend.setLength(0);
+                    changeStatusTS(NULL, true);
+                }
+
+               // Receive data
+                if (bis.available()>1)
+                 {
+                    int tamanho= bis.available();
+                     System.out.println(tamanho+"tamanho da saida");
+                    byte[] ler = new byte[tamanho];
+                    bis.read(ler, 0, tamanho);
+                     System.out.println(new String(ler,"ISO-8859-1")+"  saida de dados");
+                    byte[] texto_decrypt = new byte[128];
+                    byte[] chave_decrypt = new byte[128];
+                    int j=0;
+                    
+                     for (int i = 0; i < ler.length; i++) 
+                     {  
+                         if(i<128)
+                         {
+                             chave_decrypt[i] = ler[i];
+                             j=0;
+                         }
+                         if(i>=128 && i<tamanho)
+                         {  
+                             texto_decrypt[j] = ler[i] ;
+                             j++;
+                         }
+                         
+                     }
+
+                 System.out.println(chave_decrypt.length+"  saida de chave cifrada");
+                 System.out.println(texto_decrypt.length+"  saida de texto cifrado");
+                
+               //-- Decifrando a mensagem
+        CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
+                     System.out.println("carregando chave");
+        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
+                     System.out.println("chave carregada");
+        Decifrador dcf = new Decifrador();
+        byte[] decifrado = null;
+                    try {
+                        decifrado = dcf.decifra(pvk, texto_decrypt, chave_decrypt);
                     } catch (NoSuchAlgorithmException ex) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (NoSuchPaddingException ex) {
@@ -597,34 +686,12 @@ public static byte[] convertStringToByteArray(String s) {
                     } catch (IllegalBlockSizeException ex) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (BadPaddingException ex) {
+                        ex.printStackTrace();
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (InvalidAlgorithmParameterException ex) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
                     }
-
-                    bos.write(codificar);
-                    bos.write(codificar2);
-                   
-                    bos.flush();
-                    toSend.setLength(0);
-
-
-
-                    changeStatusTS(NULL, true);
-                }
-               // Receive data
-                if (bis.available()>1)
-                 {  
-                 // s = in.readLine();
-                    byte[] texto_decrypt = new byte[32];
-                    byte[] chave_decrypt = new byte[32];
-                    bis.read(texto_decrypt, 0, 32);
-                    bis.read(chave_decrypt, 0, 32);
-                    String s1 = new String(texto_decrypt,"ISO-8859-1");
-                    String s2 = new String(chave_decrypt,"ISO-8859-1");
-                   
-                     System.out.println( new String(texto_decrypt,"ISO-8859-1"));
-                     System.out.println(new String(chave_decrypt,"ISO-8859-1"));
+       
 
                 
                  
