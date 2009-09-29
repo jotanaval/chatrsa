@@ -234,13 +234,14 @@ public class TCPChat implements Runnable {
 
       // Set up the chat pane
       JPanel chatPane = new JPanel(new BorderLayout());
+
       chatText = new JTextArea(10, 20);
       chatText.setLineWrap(true);
       chatText.setEditable(false);
       chatText.setForeground(Color.blue);
       JScrollPane chatTextPane = new JScrollPane(chatText,
          JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-         JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+         JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
       chatLine = new JTextField();
       chatLine.setEnabled(true);
       chatLine.addActionListener(new ActionAdapter() {
@@ -249,7 +250,7 @@ public class TCPChat implements Runnable {
                if (!s.equals("")) {
                   appendToChatBox("ENVIADO: " + s + "\n");
                   chatLine.selectAll();
-
+     
                   // Send the string
                   sendString(s);
                }
@@ -265,14 +266,15 @@ public class TCPChat implements Runnable {
       chatText2.setForeground(Color.blue);
       JScrollPane chatTextPane2 = new JScrollPane(chatText2,
       JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-      JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+      JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
       chatLine = new JTextField();
       chatLine.setEnabled(false);
       chatLine.addActionListener(new ActionAdapter() {
             public void actionPerformed(ActionEvent e) {
                String s = chatLine.getText();
                if (!s.equals("")) {
-                  appendToChatBox("ENVIADO: " + s + "\n");
+                  appendToChatBox("ENVIADO: " + s );
+               
                   chatLine.selectAll();
                   // Send the string
                   sendString(s);
@@ -361,6 +363,11 @@ public class TCPChat implements Runnable {
 
    // Thread-safe way to append to the chat box
    private static void appendToChatBox(String s) {
+      synchronized (toAppend) {
+         toAppend.append(s);
+      }
+   }
+    private static void appendToChatBox2(String s) {
       synchronized (toAppend) {
          toAppend.append(s);
       }
@@ -577,8 +584,8 @@ public static byte[] convertStringToByteArray(String s) {
                if (toSend.length() != 0)
                {      
                     byte[] codificar = new byte[64];
-                     byte[] codificar2 = new byte[64];
-                    codificar=toSend.toString().getBytes("ISO-8859-1")   ;
+                    byte[] codificar2 = new byte[64];
+                    codificar = toSend.toString().getBytes("ISO-8859-1")   ;
                     codificar2=  "chave_grande_pra_testar_tamanho_do_byte".getBytes("ISO-8859-1")   ;
                    
                     
@@ -588,20 +595,24 @@ public static byte[] convertStringToByteArray(String s) {
                     try {
                         byte[][] cifrado = cf.cifra(pub, codificar);
 
-                           System.out.println(cifrado[0].length+"tamanho do texto_cifrado");
+                            System.out.println(cifrado[0].length+"tamanho do texto_cifrado");
                 
                             System.out.println(cifrado[1].length+"tamanho da chave cifrada");
 
-                            byte[] enviar=null;
+                            
                             int j = 0;
                             int k = 0;
-                            byte [] ciff = new byte[32];
+                            byte [] ciff = new byte[cifrado[0].length];
                             ciff=cifrado[0];
+                            byte [] ciff2 = new byte[cifrado[1].length];
+                            ciff2=cifrado[1];
+                             byte[] enviar=new byte[cifrado[0].length+cifrado[1].length];
                             for (int i = 0; i < 128+ciff.length; i++)
                             {
+                             
                                if(i<128)
                                {
-                                   enviar[i]=cifrado[1][i];
+                                   enviar[i]=ciff2[i];
                                    j=128;
                                }
                                if(i>=128 && i<128+ciff.length)
@@ -618,6 +629,7 @@ public static byte[] convertStringToByteArray(String s) {
                              System.out.println(new String(cifrado[0],"ISO-8859-1")+"  saida de texto cifrado");
                              System.out.println(enviar.length);
                             bos.write(enviar,0,enviar.length);
+                            chatText2.append("ENVIADO: " + new String(cifrado[0],"ISO-8859-1") + "\n");
 
                         } catch (NoSuchAlgorithmException ex) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
@@ -646,7 +658,7 @@ public static byte[] convertStringToByteArray(String s) {
                     byte[] ler = new byte[tamanho];
                     bis.read(ler, 0, tamanho);
                      System.out.println(new String(ler,"ISO-8859-1")+"  saida de dados");
-                    byte[] texto_decrypt = new byte[128];
+                    byte[] texto_decrypt = new byte[tamanho-128];
                     byte[] chave_decrypt = new byte[128];
                     int j=0;
                     
@@ -669,12 +681,12 @@ public static byte[] convertStringToByteArray(String s) {
                  System.out.println(texto_decrypt.length+"  saida de texto cifrado");
                 
                //-- Decifrando a mensagem
-        CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
+                CarregadorChavePrivada ccpv = new CarregadorChavePrivada();
                      System.out.println("carregando chave");
-        PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
+                PrivateKey pvk = ccpv.carregaChavePrivada (new File ("chave.privada"));
                      System.out.println("chave carregada");
-        Decifrador dcf = new Decifrador();
-        byte[] decifrado = null;
+                Decifrador dcf = new Decifrador();
+                byte[] decifrado = null;
                     try {
                         decifrado = dcf.decifra(pvk, texto_decrypt, chave_decrypt);
                     } catch (NoSuchAlgorithmException ex) {
@@ -692,8 +704,8 @@ public static byte[] convertStringToByteArray(String s) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
                     }
        
-
-                
+                    String mensagem_recebida_decriptografada=new String(decifrado,"ISO-8859-1");
+                    System.out.println(mensagem_recebida_decriptografada+"  mensagem recebida");
                  
                      
 
@@ -715,7 +727,7 @@ public static byte[] convertStringToByteArray(String s) {
                      // Otherwise, receive what text
                      else
                      {
-                        appendToChatBox("RECEBIDO: " + s + "\n");
+                        appendToChatBox("RECEBIDO: " + mensagem_recebida_decriptografada + "\n");
                         changeStatusTS(NULL, true);
                      }
                   }
