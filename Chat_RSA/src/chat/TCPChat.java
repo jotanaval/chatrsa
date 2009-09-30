@@ -629,7 +629,7 @@ public static byte[] convertStringToByteArray(String s) {
                              System.out.println(new String(cifrado[0],"ISO-8859-1")+"  saida de texto cifrado");
                              System.out.println(enviar.length);
                             bos.write(enviar,0,enviar.length);
-                            chatText2.append("ENVIADO: " + new String(cifrado[0],"ISO-8859-1") + "\n");
+                            chatText2.append("CRIPTO: " + new String(cifrado[0],"ISO-8859-1") + "\n");
 
                         } catch (NoSuchAlgorithmException ex) {
                         Logger.getLogger(TCPChat.class.getName()).log(Level.SEVERE, null, ex);
@@ -717,17 +717,18 @@ public static byte[] convertStringToByteArray(String s) {
                  
 
                      
-                  if ((s != null) &&  (s.length() != 0))
+                  if ((mensagem_recebida_decriptografada != null) &&  (mensagem_recebida_decriptografada.length() != 0))
                   {
                      // Check if it is the end of a trasmission
-                     if (s.equals(END_CHAT_SESSION))
+                     if (mensagem_recebida_decriptografada.equals(END_CHAT_SESSION))
                      {
                         changeStatusTS(DISCONNECTING, true);
                      }
                      // Otherwise, receive what text
                      else
                      {
-                        appendToChatBox("RECEBIDO: " + mensagem_recebida_decriptografada + "\n");
+                        appendToChatBox("RECEBIDO: " + new String(texto_decrypt,"ISO-8859-1") + "\n");
+                        chatText2.append("DECRIPTO: " + mensagem_recebida_decriptografada + "\n");
                         changeStatusTS(NULL, true);
                      }
                   }
